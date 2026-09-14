@@ -1,0 +1,7 @@
+{
+  "name": "Rafique Estates",
+  "description": "Luxury real-estate advisory, smart property discovery platform, and CRM for Mumbai's finest residences.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
