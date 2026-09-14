@@ -92,6 +92,26 @@ interface EstateContextType {
 
 const EstateContext = createContext<EstateContextType | undefined>(undefined);
 
+function safeGetLocalStorage<T>(key: string, fallback: T): T {
+  try {
+    const cached = localStorage.getItem(key);
+    if (!cached) return fallback;
+    const parsed = JSON.parse(cached);
+    return parsed !== null && parsed !== undefined ? parsed : fallback;
+  } catch (e) {
+    console.warn(`Error reading ${key} from localStorage, using fallback:`, e);
+    return fallback;
+  }
+}
+
+function safeSetLocalStorage(key: string, value: any): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.warn(`Error writing ${key} to localStorage:`, e);
+  }
+}
+
 export const EstateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Navigation
   const [activeView, setActiveView] = useState<'home' | 'buy' | 'rent' | 'sell' | 'find' | 'shortlist' | 'insights' | 'about' | 'crm'>('home');
@@ -103,30 +123,26 @@ export const EstateProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Storage-backed state
-  const [properties, setProperties] = useState<Property[]>(() => {
-    const cached = localStorage.getItem('rafique_properties');
-    return cached ? JSON.parse(cached) : INITIAL_PROPERTIES;
-  });
+  const [properties, setProperties] = useState<Property[]>(() =>
+    safeGetLocalStorage('rafique_properties', INITIAL_PROPERTIES)
+  );
 
   useEffect(() => {
-    localStorage.setItem('rafique_properties', JSON.stringify(properties));
+    safeSetLocalStorage('rafique_properties', properties);
   }, [properties]);
 
-  const [savedPropertyIds, setSavedPropertyIds] = useState<string[]>(() => {
-    const cached = localStorage.getItem('rafique_saved_props');
-    return cached ? JSON.parse(cached) : ['raf-01', 'raf-03'];
-  });
+  const [savedPropertyIds, setSavedPropertyIds] = useState<string[]>(() =>
+    safeGetLocalStorage('rafique_saved_props', ['raf-01', 'raf-03'])
+  );
 
-  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => {
-    const cached = localStorage.getItem('rafique_viewed_props');
-    return cached ? JSON.parse(cached) : ['raf-01', 'raf-02', 'raf-04'];
-  });
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() =>
+    safeGetLocalStorage('rafique_viewed_props', ['raf-01', 'raf-02', 'raf-04'])
+  );
 
   const [comparisonPropertyIds, setComparisonPropertyIds] = useState<string[]>(['raf-01', 'raf-03']);
 
-  const [activeRequirement, setActiveRequirement] = useState<RequirementPayload | null>(() => {
-    const cached = localStorage.getItem('rafique_active_req');
-    return cached ? JSON.parse(cached) : {
+  const [activeRequirement, setActiveRequirement] = useState<RequirementPayload | null>(() =>
+    safeGetLocalStorage<RequirementPayload>('rafique_active_req', {
       purpose: 'buy',
       locations: ['Bandra West'],
       budgetMin: 2.0,
@@ -134,40 +150,34 @@ export const EstateProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       propertyType: 'Apartment',
       bhk: [3],
       timeline: '1–3 Months',
-      preferences: ['Ready to move', 'Parking', 'Sea view', 'Balcony']
-    };
-  });
+      preferences: ['Ready to move', 'Parking', 'Sea view', 'Balcony'],
+    })
+  );
 
   const [matchingWeights, setMatchingWeights] = useState<MatchingWeights>(DEFAULT_WEIGHTS);
 
-  const [leads, setLeads] = useState<Lead[]>(() => {
-    const cached = localStorage.getItem('rafique_leads');
-    return cached ? JSON.parse(cached) : INITIAL_LEADS;
-  });
+  const [leads, setLeads] = useState<Lead[]>(() =>
+    safeGetLocalStorage('rafique_leads', INITIAL_LEADS)
+  );
 
-  const [sellerLeads, setSellerLeads] = useState<SellerLead[]>(() => {
-    const cached = localStorage.getItem('rafique_seller_leads');
-    return cached ? JSON.parse(cached) : INITIAL_SELLER_LEADS;
-  });
+  const [sellerLeads, setSellerLeads] = useState<SellerLead[]>(() =>
+    safeGetLocalStorage('rafique_seller_leads', INITIAL_SELLER_LEADS)
+  );
 
-  const [visits, setVisits] = useState<SiteVisit[]>(() => {
-    const cached = localStorage.getItem('rafique_visits');
-    return cached ? JSON.parse(cached) : INITIAL_VISITS;
-  });
+  const [visits, setVisits] = useState<SiteVisit[]>(() =>
+    safeGetLocalStorage('rafique_visits', INITIAL_VISITS)
+  );
 
-  const [deals, setDeals] = useState<Deal[]>(() => {
-    const cached = localStorage.getItem('rafique_deals');
-    return cached ? JSON.parse(cached) : INITIAL_DEALS;
-  });
+  const [deals, setDeals] = useState<Deal[]>(() =>
+    safeGetLocalStorage('rafique_deals', INITIAL_DEALS)
+  );
 
-  const [followUps, setFollowUps] = useState<FollowUpTask[]>(() => {
-    const cached = localStorage.getItem('rafique_follow_ups');
-    return cached ? JSON.parse(cached) : INITIAL_FOLLOW_UPS;
-  });
+  const [followUps, setFollowUps] = useState<FollowUpTask[]>(() =>
+    safeGetLocalStorage('rafique_follow_ups', INITIAL_FOLLOW_UPS)
+  );
 
-  const [propertyAlerts, setPropertyAlerts] = useState<PropertyAlert[]>(() => {
-    const cached = localStorage.getItem('rafique_alerts');
-    return cached ? JSON.parse(cached) : [
+  const [propertyAlerts, setPropertyAlerts] = useState<PropertyAlert[]>(() =>
+    safeGetLocalStorage('rafique_alerts', [
       {
         id: 'alt-01',
         name: 'Rahul Singhania',
@@ -177,48 +187,48 @@ export const EstateProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         budget: 'Under ₹3 Cr',
         bhk: 3,
         propertyType: 'Apartment',
-        createdAt: '2026-09-12'
-      }
-    ];
-  });
+        createdAt: '2026-09-12',
+      },
+    ])
+  );
 
   // Sync state changes to localStorage
   useEffect(() => {
-    localStorage.setItem('rafique_saved_props', JSON.stringify(savedPropertyIds));
+    safeSetLocalStorage('rafique_saved_props', savedPropertyIds);
   }, [savedPropertyIds]);
 
   useEffect(() => {
-    localStorage.setItem('rafique_viewed_props', JSON.stringify(recentlyViewedIds));
+    safeSetLocalStorage('rafique_viewed_props', recentlyViewedIds);
   }, [recentlyViewedIds]);
 
   useEffect(() => {
     if (activeRequirement) {
-      localStorage.setItem('rafique_active_req', JSON.stringify(activeRequirement));
+      safeSetLocalStorage('rafique_active_req', activeRequirement);
     }
   }, [activeRequirement]);
 
   useEffect(() => {
-    localStorage.setItem('rafique_leads', JSON.stringify(leads));
+    safeSetLocalStorage('rafique_leads', leads);
   }, [leads]);
 
   useEffect(() => {
-    localStorage.setItem('rafique_seller_leads', JSON.stringify(sellerLeads));
+    safeSetLocalStorage('rafique_seller_leads', sellerLeads);
   }, [sellerLeads]);
 
   useEffect(() => {
-    localStorage.setItem('rafique_visits', JSON.stringify(visits));
+    safeSetLocalStorage('rafique_visits', visits);
   }, [visits]);
 
   useEffect(() => {
-    localStorage.setItem('rafique_deals', JSON.stringify(deals));
+    safeSetLocalStorage('rafique_deals', deals);
   }, [deals]);
 
   useEffect(() => {
-    localStorage.setItem('rafique_follow_ups', JSON.stringify(followUps));
+    safeSetLocalStorage('rafique_follow_ups', followUps);
   }, [followUps]);
 
   useEffect(() => {
-    localStorage.setItem('rafique_alerts', JSON.stringify(propertyAlerts));
+    safeSetLocalStorage('rafique_alerts', propertyAlerts);
   }, [propertyAlerts]);
 
   const showToast = (msg: string) => {

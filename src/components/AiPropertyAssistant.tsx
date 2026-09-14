@@ -76,16 +76,23 @@ export const AiPropertyAssistant: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/ai/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
-      });
-
-      const data = await response.json();
+      let data: any = null;
+      try {
+        const response = await fetch('/api/ai/assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, message: query, catalog: properties.slice(0, 10) }),
+        });
+        if (response.ok) {
+          data = await response.json();
+        }
+      } catch (networkErr) {
+        // Fallback gracefully on static hosts like GitHub Pages
+        console.warn('API endpoint not reachable, switching to client-side matching engine:', networkErr);
+      }
 
       let matchedProps: Property[] = [];
-      if (data.matchedPropertyIds && Array.isArray(data.matchedPropertyIds)) {
+      if (data && data.matchedPropertyIds && Array.isArray(data.matchedPropertyIds)) {
         matchedProps = properties.filter((p) => data.matchedPropertyIds.includes(p.id));
       }
 
